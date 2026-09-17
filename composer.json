@@ -1,0 +1,29 @@
+{
+    "name": "migears/image",
+    "description": "极简图像处理工具包，支持缩放、裁剪、水印、格式转换",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["image", "gd", "resize", "crop", "thumbnail", "watermark"],
+    "require": {
+        "php": "^8.1"
+    },
+    "suggest": {
+        "ext-gd": "需要 GD 扩展来使用 GDImage 实现"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "MiGears\\Image\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "MiGears\\Image\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
