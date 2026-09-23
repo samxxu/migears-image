@@ -465,6 +465,66 @@ class GDImageTest extends ImageTestCase
         $wm->destroy();
     }
 
+    public function testImageWatermarkPartiallyOutsideCanvas(): void
+    {
+        $img = new GDImage($this->createSolidImage(100, 100, 0xFFFFFF));
+        $wm = new GDImage($this->createSolidImage(50, 50, 0xFF0000));
+
+        $img->imageWatermark($wm, 80, 80, 100);
+
+        $data = $img->output(ImageType::PNG);
+        $outputPath = $this->tempDir . '/wm-partial.png';
+        file_put_contents($outputPath, $data);
+
+        $resource = imagecreatefrompng($outputPath);
+        // Visible watermark part (source 0..19) must cover the corner, not a black block
+        $this->assertSame(0xFF0000, imagecolorat($resource, 99, 99) & 0xFFFFFF);
+
+        $img->destroy();
+        $wm->destroy();
+    }
+
+    public function testImageWatermarkNegativePosition(): void
+    {
+        $img = new GDImage($this->createSolidImage(100, 100, 0xFFFFFF));
+        $wm = new GDImage($this->createSolidImage(50, 50, 0xFF0000));
+
+        $img->imageWatermark($wm, -20, -20, 100);
+
+        $data = $img->output(ImageType::PNG);
+        $outputPath = $this->tempDir . '/wm-negative.png';
+        file_put_contents($outputPath, $data);
+
+        $resource = imagecreatefrompng($outputPath);
+        // Visible watermark part (source 20..49) starts at canvas origin
+        $this->assertSame(0xFF0000, imagecolorat($resource, 0, 0) & 0xFFFFFF);
+        // Rest of the canvas stays untouched
+        $this->assertSame(0xFFFFFF, imagecolorat($resource, 99, 99) & 0xFFFFFF);
+
+        $img->destroy();
+        $wm->destroy();
+    }
+
+    public function testImageWatermarkFullyOutsideCanvas(): void
+    {
+        $img = new GDImage($this->createSolidImage(100, 100, 0xFFFFFF));
+        $wm = new GDImage($this->createSolidImage(50, 50, 0xFF0000));
+
+        $img->imageWatermark($wm, 200, 200, 100);
+
+        $data = $img->output(ImageType::PNG);
+        $outputPath = $this->tempDir . '/wm-fully-outside.png';
+        file_put_contents($outputPath, $data);
+
+        $this->assertImageSize($outputPath, 100, 100);
+        $resource = imagecreatefrompng($outputPath);
+        $this->assertSame(0xFFFFFF, imagecolorat($resource, 0, 0) & 0xFFFFFF);
+        $this->assertSame(0xFFFFFF, imagecolorat($resource, 99, 99) & 0xFFFFFF);
+
+        $img->destroy();
+        $wm->destroy();
+    }
+
     public function testTextWatermark(): void
     {
         $img = $this->createGDImage(200, 100, ImageType::PNG);
@@ -498,6 +558,129 @@ class GDImageTest extends ImageTestCase
 
         $this->expectException(ImageException::class);
         $img->textWatermark('test', '/nonexistent/font.ttf');
+    }
+
+    // ===== Parameter validation tests =====
+
+    public function testTextWatermarkOpacityTooHigh(): void
+    {
+        $fontFile = $this->findFontFile();
+        if ($fontFile === null) {
+            $this->markTestSkipped('No usable font file found');
+        }
+
+        $img = $this->createGDImage(200, 100);
+
+        $this->expectException(ImageException::class);
+        $img->textWatermark('test', $fontFile, opacity: 200);
+    }
+
+    public function testTextWatermarkOpacityNegative(): void
+    {
+        $fontFile = $this->findFontFile();
+        if ($fontFile === null) {
+            $this->markTestSkipped('No usable font file found');
+        }
+
+        $img = $this->createGDImage(200, 100);
+
+        $this->expectException(ImageException::class);
+        $img->textWatermark('test', $fontFile, opacity: -10);
+    }
+
+    public function testTextWatermarkOpacityBoundariesAreValid(): void
+    {
+        $fontFile = $this->findFontFile();
+        if ($fontFile === null) {
+            $this->markTestSkipped('No usable font file found');
+        }
+
+        $img = $this->createGDImage(200, 100);
+        $img->textWatermark('fully opaque', $fontFile, opacity: 100);
+        $img->textWatermark('fully transparent', $fontFile, opacity: 0);
+
+        $this->assertSame(200, $img->info()->width);
+        $img->destroy();
+    }
+
+    public function testImageWatermarkOpacityTooHigh(): void
+    {
+        $img = $this->createGDImage(100, 100, ImageType::PNG);
+        $wm = $this->createGDImage(20, 20, ImageType::PNG);
+
+        $this->expectException(ImageException::class);
+        $img->imageWatermark($wm, 0, 0, 200);
+    }
+
+    public function testImageWatermarkOpacityNegative(): void
+    {
+        $img = $this->createGDImage(100, 100, ImageType::PNG);
+        $wm = $this->createGDImage(20, 20, ImageType::PNG);
+
+        $this->expectException(ImageException::class);
+        $img->imageWatermark($wm, 0, 0, -1);
+    }
+
+    public function testImageWatermarkOpacityBoundariesAreValid(): void
+    {
+        $img = $this->createGDImage(100, 100, ImageType::PNG);
+        $wm = $this->createGDImage(20, 20, ImageType::PNG);
+
+        $img->imageWatermark($wm, 0, 0, 100);
+        $img->imageWatermark($wm, 0, 0, 0);
+
+        $this->assertSame(100, $img->info()->width);
+        $img->destroy();
+        $wm->destroy();
+    }
+
+    public function testSaveQualityTooHigh(): void
+    {
+        $img = $this->createGDImage(50, 50, ImageType::JPEG);
+
+        $this->expectException(ImageException::class);
+        $img->save($this->tempDir . '/q-high.jpg', ImageType::JPEG, 200);
+    }
+
+    public function testSaveQualityNegative(): void
+    {
+        $img = $this->createGDImage(50, 50, ImageType::JPEG);
+
+        $this->expectException(ImageException::class);
+        $img->save($this->tempDir . '/q-neg.jpg', ImageType::JPEG, -10);
+    }
+
+    public function testOutputQualityOutOfRange(): void
+    {
+        $img = $this->createGDImage(50, 50, ImageType::PNG);
+
+        $this->expectException(ImageException::class);
+        $img->output(ImageType::PNG, 200);
+    }
+
+    public function testSaveQualityBoundariesAreValid(): void
+    {
+        $img = $this->createGDImage(50, 50, ImageType::JPEG);
+
+        $this->assertTrue($img->save($this->tempDir . '/q0.jpg', ImageType::JPEG, 0));
+        $this->assertTrue($img->save($this->tempDir . '/q100.jpg', ImageType::JPEG, 100));
+
+        $img->destroy();
+    }
+
+    public function testSaveValidatesQualityBeforeCreatingDirectory(): void
+    {
+        $img = $this->createGDImage(50, 50, ImageType::JPEG);
+        $dir = $this->tempDir . '/not-created';
+
+        try {
+            $img->save($dir . '/out.jpg', ImageType::JPEG, 200);
+            $this->fail('Expected ImageException');
+        } catch (ImageException) {
+            $this->assertDirectoryDoesNotExist($dir);
+        }
+
+        $img->destroy();
     }
 
     // ===== resource / destroy tests =====
@@ -706,7 +889,47 @@ class GDImageTest extends ImageTestCase
         unlink($tmpFile);
     }
 
+    public function testCropCenterTargetLargerThanSource(): void
+    {
+        $img = $this->createGDImage(200, 150);
+        $img->cropCenter(400, 300);
+
+        $info = $img->info();
+        $this->assertSame(200, $info->width);
+        $this->assertSame(150, $info->height);
+
+        $img->destroy();
+    }
+
+    public function testCropCenterExactSourceSize(): void
+    {
+        $img = $this->createGDImage(200, 150);
+        $img->cropCenter(200, 150);
+
+        $info = $img->info();
+        $this->assertSame(200, $info->width);
+        $this->assertSame(150, $info->height);
+
+        $img->destroy();
+    }
+
+    public function testCropCenterPartialOversizeThrows(): void
+    {
+        $img = $this->createGDImage(200, 150);
+
+        $this->expectException(ImageException::class);
+        $img->cropCenter(400, 100);
+    }
+
     // ===== Helper methods =====
+
+    private function createSolidImage(int $width, int $height, int $color): \GdImage
+    {
+        $img = imagecreatetruecolor($width, $height);
+        $rgb = imagecolorallocate($img, ($color >> 16) & 0xFF, ($color >> 8) & 0xFF, $color & 0xFF);
+        imagefill($img, 0, 0, $rgb);
+        return $img;
+    }
 
     private function findFontFile(): ?string
     {

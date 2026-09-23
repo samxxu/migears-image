@@ -95,6 +95,7 @@ interface ImageInterface
     /**
      * Text watermark
      *
+     * @param int $opacity Opacity 0-100
      * @throws ImageException
      */
     public function textWatermark(
@@ -110,6 +111,7 @@ interface ImageInterface
     /**
      * Image watermark
      *
+     * @param int $opacity Opacity 0-100
      * @throws ImageException
      */
     public function imageWatermark(
@@ -122,6 +124,7 @@ interface ImageInterface
     /**
      * Saves the image to a file
      *
+     * @param int $quality Quality 0-100
      * @throws ImageException
      */
     public function save(string $path, ?ImageType $type = null, int $quality = 90): bool;
@@ -131,6 +134,7 @@ interface ImageInterface
      *
      * Useful for sending directly to browser or returning in a response.
      *
+     * @param int $quality Quality 0-100
      * @throws ImageException
      */
     public function output(?ImageType $type = null, int $quality = 90): string;

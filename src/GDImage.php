@@ -108,6 +108,9 @@ class GDImage implements ImageInterface
     public function cropCenter(int $width, int $height): static
     {
         $info = $this->info();
+        if ($width >= $info->width && $height >= $info->height) {
+            return $this; // requested crop covers the whole image, keep as-is
+        }
         $x = (int) round(($info->width - $width) / 2);
         $y = (int) round(($info->height - $height) / 2);
         return $this->crop($width, $height, max(0, $x), max(0, $y));
@@ -176,6 +179,7 @@ class GDImage implements ImageInterface
         int $opacity = 80,
         int $color = 0xFFFFFF,
     ): static {
+        if ($opacity < 0 || $opacity > 100) throw new ImageException('Opacity must be between 0 and 100');
         if (! file_exists($fontFile)) {
             throw new ImageException("Font file does not exist: {$fontFile}");
         }
@@ -197,6 +201,7 @@ class GDImage implements ImageInterface
         int $y = 10,
         int $opacity = 80,
     ): static {
+        if ($opacity < 0 || $opacity > 100) throw new ImageException('Opacity must be between 0 and 100');
         $wm = $watermark instanceof ImageInterface ? $watermark : new self($watermark);
         $wmResource = $wm->resource();
         $wmInfo = $wm->info();
@@ -209,6 +214,7 @@ class GDImage implements ImageInterface
 
     public function save(string $path, ?ImageType $type = null, int $quality = 90): bool
     {
+        if ($quality < 0 || $quality > 100) throw new ImageException('Quality must be between 0 and 100');
         $saveType = $type ?? $this->detectTypeFromPath($path) ?? $this->type;
         $dir = dirname($path);
         if (! is_dir($dir) && ! mkdir($dir, 0755, true)) {
@@ -219,6 +225,7 @@ class GDImage implements ImageInterface
 
     public function output(?ImageType $type = null, int $quality = 90): string
     {
+        if ($quality < 0 || $quality > 100) throw new ImageException('Quality must be between 0 and 100');
         $outputType = $type ?? $this->type;
         ob_start();
         $this->outputTo(null, $outputType, $quality);

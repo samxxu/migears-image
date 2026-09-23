@@ -13,7 +13,7 @@ A minimalist image processing toolkit based on PHP 8.1+ and the GD extension.
 - **Zero required dependencies** — GD extension is a suggested dependency, implementations can be replaced as needed
 - **Minimalist API** — Chainable calls, intuitive and easy to use
 - **Type-safe** — Full type declarations, readonly value objects, enums
-- **Lightweight** — Core classes kept under 250 lines
+- **Lightweight** — Core classes kept under 300 lines
 - **High test coverage** — Uses GD to generate test images, covering all core functionality
 
 ## Requirements
@@ -172,15 +172,15 @@ new GDImage(\GdImage $resource, ?ImageType $type = null);
 
 | Method | Description |
 |--------|-------------|
-| `imageWatermark(string\|ImageInterface $wm, int $x, int $y, int $opacity): static` | Image watermark |
-| `textWatermark(string $text, string $font, int $size, int $x, int $y, int $opacity, int $color): static` | Text watermark |
+| `imageWatermark(string\|ImageInterface $wm, int $x, int $y, int $opacity): static` | Image watermark (`$opacity` 0-100) |
+| `textWatermark(string $text, string $font, int $size, int $x, int $y, int $opacity, int $color): static` | Text watermark (`$opacity` 0-100) |
 
 ### Saving & Output
 
 | Method | Description |
 |--------|-------------|
-| `save(string $path, ?ImageType $type = null, int $quality = 90): bool` | Save to file |
-| `output(?ImageType $type = null, int $quality = 90): string` | Output as binary string |
+| `save(string $path, ?ImageType $type = null, int $quality = 90): bool` | Save to file (`$quality` 0-100) |
+| `output(?ImageType $type = null, int $quality = 90): string` | Output as binary string (`$quality` 0-100) |
 
 ### Other
 
@@ -222,7 +222,7 @@ ImageType::fromMime('image/jpeg');
 
 ## Exceptions
 
-All operation failures throw `MiGears\Image\Exception\ImageException`.
+All failures throw `MiGears\Image\Exception\ImageException`, including out-of-range parameters (`$quality` and `$opacity` must be between 0 and 100).
 
 ## Testing
 
@@ -248,7 +248,7 @@ MIT
 - **零强制依赖** — GD 扩展为建议依赖，可按需替换实现
 - **极简 API** — 链式调用，直观易用
 - **类型安全** — 全量类型声明、readonly 值对象、枚举
-- **轻量级** — 核心类控制在 250 行以内
+- **轻量级** — 核心类控制在 300 行以内
 - **高测试覆盖** — 使用 GD 生成测试图片，覆盖所有核心功能
 
 ## 要求
@@ -407,15 +407,15 @@ new GDImage(\GdImage $resource, ?ImageType $type = null);
 
 | 方法 | 说明 |
 |------|------|
-| `imageWatermark(string\|ImageInterface $wm, int $x, int $y, int $opacity): static` | 图片水印 |
-| `textWatermark(string $text, string $font, int $size, int $x, int $y, int $opacity, int $color): static` | 文字水印 |
+| `imageWatermark(string\|ImageInterface $wm, int $x, int $y, int $opacity): static` | 图片水印（`$opacity` 0-100） |
+| `textWatermark(string $text, string $font, int $size, int $x, int $y, int $opacity, int $color): static` | 文字水印（`$opacity` 0-100） |
 
 ### 保存 & 输出
 
 | 方法 | 说明 |
 |------|------|
-| `save(string $path, ?ImageType $type = null, int $quality = 90): bool` | 保存到文件 |
-| `output(?ImageType $type = null, int $quality = 90): string` | 输出二进制字符串 |
+| `save(string $path, ?ImageType $type = null, int $quality = 90): bool` | 保存到文件（`$quality` 0-100） |
+| `output(?ImageType $type = null, int $quality = 90): string` | 输出二进制字符串（`$quality` 0-100） |
 
 ### 其他
 
@@ -457,7 +457,7 @@ ImageType::fromMime('image/jpeg');
 
 ## 异常
 
-所有操作失败抛出 `MiGears\Image\Exception\ImageException`。
+所有失败均抛出 `MiGears\Image\Exception\ImageException`，包括参数越界（`$quality` 与 `$opacity` 必须在 0-100 之间）。
 
 ## 测试
 
