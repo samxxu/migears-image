@@ -20,7 +20,7 @@ abstract class ImageTestCase extends TestCase
             $this->markTestSkipped('GD extension not installed');
         }
 
-        $this->tempDir = sys_get_temp_dir() . '/tinygears-image-test-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/migears-image-test-' . uniqid();
         mkdir($this->tempDir, 0755, true);
     }
 
