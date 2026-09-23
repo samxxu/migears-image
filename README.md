@@ -4,6 +4,10 @@
 
 A minimalist image processing toolkit based on PHP 8.1+ and the GD extension.
 
+> **Background**: miGears is the open-source successor of **TinyGears**, a
+> self-developed PHP framework. It was renamed and open-sourced recently because
+> the name *TinyGears* is already taken in the open-source community.
+
 ## Features
 
 - **Zero required dependencies** — GD extension is a suggested dependency, implementations can be replaced as needed
