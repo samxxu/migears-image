@@ -153,7 +153,9 @@ class GDImage implements ImageInterface
 
     public function flipHorizontal(): static
     {
-        if (! imageflip($this->image, IMG_FLIP_HORIZONTAL)) {
+        /** @var bool $ok */
+        $ok = imageflip($this->image, IMG_FLIP_HORIZONTAL);
+        if (! $ok) {
             throw new ImageException('Failed to flip image horizontally');
         }
         return $this;
@@ -161,7 +163,9 @@ class GDImage implements ImageInterface
 
     public function flipVertical(): static
     {
-        if (! imageflip($this->image, IMG_FLIP_VERTICAL)) {
+        /** @var bool $ok */
+        $ok = imageflip($this->image, IMG_FLIP_VERTICAL);
+        if (! $ok) {
             throw new ImageException('Failed to flip image vertically');
         }
         return $this;
@@ -169,7 +173,9 @@ class GDImage implements ImageInterface
 
     public function flipBoth(): static
     {
-        if (! imageflip($this->image, IMG_FLIP_BOTH)) {
+        /** @var bool $ok */
+        $ok = imageflip($this->image, IMG_FLIP_BOTH);
+        if (! $ok) {
             throw new ImageException('Failed to flip image');
         }
         return $this;
