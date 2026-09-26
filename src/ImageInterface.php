@@ -145,7 +145,10 @@ interface ImageInterface
     public function resource(): \GdImage;
 
     /**
-     * Destroys the resource (explicit release semantics)
+     * Releases the image
+     *
+     * No-op on PHP 8.0+: the image is freed automatically once the last reference
+     * is released. Retained for interface compatibility.
      */
     public function destroy(): void;
 }

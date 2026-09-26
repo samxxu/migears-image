@@ -13,7 +13,7 @@ A minimalist image processing toolkit based on PHP 8.1+ and the GD extension.
 - **Zero required dependencies** — GD extension is a suggested dependency, implementations can be replaced as needed
 - **Minimalist API** — Chainable calls, intuitive and easy to use
 - **Type-safe** — Full type declarations, readonly value objects, enums
-- **Lightweight** — Core classes kept under 300 lines
+- **Lightweight** — Core class within a few hundred lines, readable in one sitting
 - **High test coverage** — Uses GD to generate test images, covering all core functionality
 
 ## Requirements
@@ -192,7 +192,7 @@ new GDImage(\GdImage $resource, ?ImageType $type = null);
 |--------|-------------|
 | `info(): ImageInfo` | Get image info (width, height, type) |
 | `resource(): \GdImage` | Get raw GD image object |
-| `destroy(): void` | Destroy resource (explicit release) |
+| `destroy(): void` | Releases the image (no-op on PHP 8.0+, where it is freed when released) |
 
 ## Core Classes
 
@@ -252,7 +252,7 @@ MIT
 - **零强制依赖** — GD 扩展为建议依赖，可按需替换实现
 - **极简 API** — 链式调用，直观易用
 - **类型安全** — 全量类型声明、readonly 值对象、枚举
-- **轻量级** — 核心类控制在 300 行以内
+- **轻量级** — 核心类控制在几百行以内，可一口气读完
 - **高测试覆盖** — 使用 GD 生成测试图片，覆盖所有核心功能
 
 ## 要求
@@ -430,7 +430,7 @@ new GDImage(\GdImage $resource, ?ImageType $type = null);
 |------|------|
 | `info(): ImageInfo` | 获取图片信息（宽、高、类型） |
 | `resource(): \GdImage` | 获取原始 GD 图像对象 |
-| `destroy(): void` | 销毁资源（显式释放） |
+| `destroy(): void` | 释放图像（PHP 8.0+ 下为空操作，对象释放时自动回收） |
 
 ## 核心类
 

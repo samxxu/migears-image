@@ -87,10 +87,14 @@ class GDImage implements ImageInterface
         }
         $info = $this->info();
         $dest = $this->createTrueColor($width, $height);
-        imagecopyresampled(
+        /** @var bool $ok */
+        $ok = imagecopyresampled(
             $dest, $this->image, 0, 0, 0, 0,
             $width, $height, $info->width, $info->height
         );
+        if (! $ok) {
+            throw new ImageException('Failed to resize image');
+        }
         $this->image = $dest;
         return $this;
     }
@@ -105,7 +109,11 @@ class GDImage implements ImageInterface
             throw new ImageException('Crop area exceeds image bounds');
         }
         $dest = $this->createTrueColor($width, $height);
-        imagecopy($dest, $this->image, 0, 0, $x, $y, $width, $height);
+        /** @var bool $ok */
+        $ok = imagecopy($dest, $this->image, 0, 0, $x, $y, $width, $height);
+        if (! $ok) {
+            throw new ImageException('Failed to crop image');
+        }
         $this->image = $dest;
         return $this;
     }
@@ -202,7 +210,11 @@ class GDImage implements ImageInterface
             $color & 0xFF,
             $alpha
         );
-        imagettftext($this->image, $fontSize, 0, $x, $y + $fontSize, $textColor, $fontFile, $text);
+        // Suppress GD's own warning: a failed draw is reported as ImageException instead.
+        $box = @imagettftext($this->image, $fontSize, 0, $x, $y + $fontSize, $textColor, $fontFile, $text);
+        if ($box === false) {
+            throw new ImageException('Failed to draw text watermark');
+        }
         return $this;
     }
 
@@ -216,10 +228,21 @@ class GDImage implements ImageInterface
         $wm = $watermark instanceof ImageInterface ? $watermark : new self($watermark);
         $wmResource = $wm->resource();
         $wmInfo = $wm->info();
+        // Scratch canvas for compositing. Deliberately not createTrueColor(): that helper
+        // toggles alpha settings from $this->type, which would change watermark blending.
         $cut = imagecreatetruecolor($wmInfo->width, $wmInfo->height);
-        imagecopy($cut, $this->image, 0, 0, $x, $y, $wmInfo->width, $wmInfo->height);
-        imagecopy($cut, $wmResource, 0, 0, 0, 0, $wmInfo->width, $wmInfo->height);
-        imagecopymerge($this->image, $cut, $x, $y, 0, 0, $wmInfo->width, $wmInfo->height, $opacity);
+        if ($cut === false) {
+            throw new ImageException('Failed to create watermark canvas');
+        }
+        /** @var bool $backgroundCopied */
+        $backgroundCopied = imagecopy($cut, $this->image, 0, 0, $x, $y, $wmInfo->width, $wmInfo->height);
+        /** @var bool $watermarkCopied */
+        $watermarkCopied = imagecopy($cut, $wmResource, 0, 0, 0, 0, $wmInfo->width, $wmInfo->height);
+        /** @var bool $merged */
+        $merged = imagecopymerge($this->image, $cut, $x, $y, 0, 0, $wmInfo->width, $wmInfo->height, $opacity);
+        if (! $backgroundCopied || ! $watermarkCopied || ! $merged) {
+            throw new ImageException('Failed to apply image watermark');
+        }
         return $this;
     }
 
@@ -238,10 +261,18 @@ class GDImage implements ImageInterface
     {
         if ($quality < 0 || $quality > 100) throw new ImageException('Quality must be between 0 and 100');
         $outputType = $type ?? $this->type;
+        $level = ob_get_level();
         ob_start();
-        $this->outputTo(null, $outputType, $quality);
-        $data = ob_get_clean();
-        if ($data === false || $data === '') {
+        try {
+            $ok = $this->outputTo(null, $outputType, $quality);
+            $data = ob_get_clean();
+        } finally {
+            // Never leave a dangling buffer behind if encoding throws.
+            if (ob_get_level() > $level) {
+                ob_end_clean();
+            }
+        }
+        if (! $ok || $data === false || $data === '') {
             throw new ImageException('Failed to output image data');
         }
         return $data;
@@ -254,8 +285,8 @@ class GDImage implements ImageInterface
 
     public function destroy(): void
     {
-        // PHP 8.0+ automatically manages the GdImage resource lifecycle.
-        // This method is retained for interface compatibility and explicit release semantics.
+        // No-op on PHP 8.0+: \GdImage is an object, so the image is freed automatically
+        // once the last reference is released. Kept for interface compatibility.
     }
 
     // --- Internal ---

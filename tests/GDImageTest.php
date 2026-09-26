@@ -618,6 +618,18 @@ class GDImageTest extends ImageTestCase
         $img->textWatermark('test', '/nonexistent/font.ttf');
     }
 
+    public function testTextWatermarkUnreadableFontThrows(): void
+    {
+        // The file exists, so only the GD call itself can fail.
+        $fontFile = $this->tempDir . '/not-a-font.ttf';
+        file_put_contents($fontFile, 'this is not a font');
+
+        $img = $this->createGDImage(200, 100);
+
+        $this->expectException(ImageException::class);
+        $img->textWatermark('test', $fontFile);
+    }
+
     // ===== Parameter validation tests =====
 
     public function testTextWatermarkOpacityTooHigh(): void
@@ -752,13 +764,37 @@ class GDImageTest extends ImageTestCase
         $img->destroy();
     }
 
-    public function testDestroy(): void
+    public function testDestroyIsANoOpAndKeepsImageUsable(): void
     {
         $img = $this->createGDImage(50, 50);
         $img->destroy();
 
-        // Calling destroy again in destructor should not error
-        $this->assertTrue(true);
+        // Documented contract: on PHP 8.0+ the image is freed when the object is
+        // released, so destroy() must not break the instance.
+        $this->assertSame(50, $img->info()->width);
+        $this->assertInstanceOf(\GdImage::class, $img->resource());
+
+        $img->destroy(); // repeated calls must stay safe
+    }
+
+    // ===== Metadata tests =====
+
+    public function testVersionMatchesComposerAndReadmeBadges(): void
+    {
+        $composerPath = __DIR__ . '/../composer.json';
+        $composer = json_decode(
+            (string) file_get_contents($composerPath),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
+
+        $this->assertSame($composer['version'], GDImage::VERSION);
+
+        $readme = (string) file_get_contents(__DIR__ . '/../README.md');
+        $badgeCount = substr_count($readme, 'badge/version-');
+        $this->assertGreaterThan(0, $badgeCount);
+        $this->assertSame($badgeCount, substr_count($readme, "badge/version-{$composer['version']}"));
     }
 
     // ===== Rotate tests =====
@@ -873,6 +909,32 @@ class GDImageTest extends ImageTestCase
     }
 
     // ===== Output tests =====
+
+    public function testOutputDoesNotLeakOutputBuffer(): void
+    {
+        $img = $this->createGDImage(50, 50);
+        $level = ob_get_level();
+
+        $img->output(ImageType::PNG);
+
+        $this->assertSame($level, ob_get_level());
+        $img->destroy();
+    }
+
+    public function testOutputKeepsBufferLevelWhenItThrows(): void
+    {
+        $img = $this->createGDImage(50, 50);
+        $level = ob_get_level();
+
+        try {
+            $img->output(ImageType::PNG, 200);
+            $this->fail('Expected ImageException');
+        } catch (ImageException) {
+            $this->assertSame($level, ob_get_level());
+        }
+
+        $img->destroy();
+    }
 
     public function testOutputReturnsString(): void
     {
