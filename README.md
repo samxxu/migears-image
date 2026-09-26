@@ -129,10 +129,14 @@ function generateThumbnails(string $sourcePath, string $outputDir): void
 ### Construction
 
 ```php
-// From file path
+// From file path — the type is detected from the file content
 new GDImage(string $filePath);
 
-// From GD resource
+// Passing a type for a file path is optional and may only confirm the detected type,
+// otherwise ImageException is thrown
+new GDImage(string $filePath, ImageType $type);
+
+// From GD resource — there is no file to inspect, so $type is used as-is (defaults to PNG)
 new GDImage(\GdImage $resource, ?ImageType $type = null);
 ```
 
@@ -222,7 +226,7 @@ ImageType::fromMime('image/jpeg');
 
 ## Exceptions
 
-All failures throw `MiGears\Image\Exception\ImageException`, including out-of-range parameters (`$quality` and `$opacity` must be between 0 and 100).
+All failures throw `MiGears\Image\Exception\ImageException`, including out-of-range parameters (`$quality` and `$opacity` must be between 0 and 100) and a declared type that contradicts the detected one.
 
 ## Testing
 
@@ -364,10 +368,13 @@ function generateThumbnails(string $sourcePath, string $outputDir): void
 ### 构造
 
 ```php
-// 从文件路径
+// 从文件路径 —— 类型由文件内容自动检测
 new GDImage(string $filePath);
 
-// 从 GD 资源
+// 文件路径下 $type 为可选，仅用于确认检测结果；不一致时抛出 ImageException
+new GDImage(string $filePath, ImageType $type);
+
+// 从 GD 资源 —— 无文件可检测，$type 直接生效（省略时默认 PNG）
 new GDImage(\GdImage $resource, ?ImageType $type = null);
 ```
 
@@ -457,7 +464,7 @@ ImageType::fromMime('image/jpeg');
 
 ## 异常
 
-所有失败均抛出 `MiGears\Image\Exception\ImageException`，包括参数越界（`$quality` 与 `$opacity` 必须在 0-100 之间）。
+所有失败均抛出 `MiGears\Image\Exception\ImageException`，包括参数越界（`$quality` 与 `$opacity` 必须在 0-100 之间）以及声明类型与检测类型不一致。
 
 ## 测试
 

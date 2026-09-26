@@ -78,6 +78,64 @@ class GDImageTest extends ImageTestCase
         $img->destroy();
     }
 
+    public function testConstructFromFileWithMatchingType(): void
+    {
+        $path = $this->createTestImageFile(100, 80, ImageType::JPEG);
+        $img = new GDImage($path, ImageType::JPEG);
+
+        $this->assertSame(ImageType::JPEG, $img->info()->type);
+        $img->destroy();
+    }
+
+    public function testConstructFromFileWithMismatchedTypeThrows(): void
+    {
+        $path = $this->createTestImageFile(100, 80, ImageType::PNG);
+
+        $this->expectException(ImageException::class);
+        new GDImage($path, ImageType::JPEG);
+    }
+
+    public function testConstructJpegFileWithMisdeclaredTypeThrows(): void
+    {
+        $path = $this->createTestImageFile(100, 80, ImageType::JPEG);
+
+        $this->expectException(ImageException::class);
+        new GDImage($path, ImageType::PNG);
+    }
+
+    public function testConstructFromFileKeepsDetectedTypeForOutput(): void
+    {
+        $path = $this->createTestImageFile(100, 80, ImageType::PNG);
+        $img = new GDImage($path, ImageType::PNG);
+
+        $outputPath = $this->tempDir . '/detected-type.bin';
+        $img->save($outputPath);
+
+        $this->assertImageType($outputPath, ImageType::PNG);
+        $img->destroy();
+    }
+
+    public function testConstructFromFileKeepsAlphaChannel(): void
+    {
+        // A declared type must never override the file's real format,
+        // otherwise resize() would silently drop the alpha channel.
+        $source = imagecreatetruecolor(40, 40);
+        imagealphablending($source, false);
+        imagesavealpha($source, true);
+        $transparent = imagecolorallocatealpha($source, 0, 0, 0, 127);
+        imagefill($source, 0, 0, $transparent);
+        $path = $this->tempDir . '/alpha.png';
+        imagepng($source, $path);
+
+        $img = new GDImage($path, ImageType::PNG);
+        $img->resize(20, 20);
+
+        $pixel = imagecolorat($img->resource(), 0, 0);
+        $this->assertSame(127, ($pixel >> 24) & 0x7F);
+
+        $img->destroy();
+    }
+
     public function testConstructFileNotFound(): void
     {
         $this->expectException(ImageException::class);

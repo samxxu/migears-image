@@ -39,6 +39,11 @@ class GDImage implements ImageInterface
             throw new ImageException("Unsupported image type: {$info['mime']}");
         }
 
+        // For file sources the real format always wins, so a declared type may only confirm it.
+        if ($type !== null && $type !== $detectedType) {
+            throw new ImageException("Declared type {$type->name} does not match detected type {$detectedType->name}");
+        }
+
         $this->type = $detectedType;
         $this->image = $this->createFromFile($source, $this->type);
     }
