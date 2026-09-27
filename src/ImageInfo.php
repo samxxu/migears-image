@@ -4,12 +4,20 @@ declare(strict_types=1);
 
 namespace MiGears\Image;
 
-final readonly class ImageInfo
+/**
+ * A value object whose properties are immutable: the constructor is the only
+ * way in, and the accessors are read-only views of it.
+ *
+ * The properties carry `readonly` one by one rather than the class carrying a
+ * `readonly class` modifier, which is PHP 8.2 syntax while this package
+ * requires php ^8.1.
+ */
+final class ImageInfo
 {
     public function __construct(
-        public int $width,
-        public int $height,
-        public ImageType $type,
+        public readonly int $width,
+        public readonly int $height,
+        public readonly ImageType $type,
     ) {
     }
 
