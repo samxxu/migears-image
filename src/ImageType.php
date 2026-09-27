@@ -6,10 +6,14 @@ namespace MiGears\Image;
 
 enum ImageType: int
 {
-    case JPEG = IMAGETYPE_JPEG;
-    case PNG = IMAGETYPE_PNG;
-    case GIF = IMAGETYPE_GIF;
-    case WEBP = IMAGETYPE_WEBP;
+    // The values mirror the IMAGETYPE_* ints of ext-gd, written out because a
+    // backed enum case has to be compile-time evaluable on PHP 8.1, where
+    // naming a constant is a fatal error; 8.2 moved that check to runtime.
+    // ImageTypeTest asserts each value against its constant, so drift shows up.
+    case JPEG = 2;
+    case PNG = 3;
+    case GIF = 1;
+    case WEBP = 18;
 
     public function extension(): string
     {
