@@ -630,6 +630,27 @@ class GDImageTest extends ImageTestCase
         $img->textWatermark('test', $fontFile);
     }
 
+    public function testTextWatermarkThrowsWhenPaletteIsExhausted(): void
+    {
+        $fontFile = $this->findFontFile();
+        if ($fontFile === null) {
+            $this->markTestSkipped('No usable font file found');
+        }
+
+        // A palette image holds at most 256 colours. Once exhausted,
+        // imagecolorallocatealpha() returns false instead of a colour index,
+        // which must surface as ImageException rather than a TypeError.
+        $palette = imagecreate(10, 10);
+        for ($i = 0; $i < 300; $i++) {
+            imagecolorallocate($palette, $i % 256, ($i * 7) % 256, ($i * 13) % 256);
+        }
+
+        $img = new GDImage($palette);
+
+        $this->expectException(ImageException::class);
+        $img->textWatermark('test', $fontFile);
+    }
+
     // ===== Parameter validation tests =====
 
     public function testTextWatermarkOpacityTooHigh(): void

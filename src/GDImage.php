@@ -210,6 +210,9 @@ class GDImage implements ImageInterface
             $color & 0xFF,
             $alpha
         );
+        if ($textColor === false) {
+            throw new ImageException('Failed to allocate text watermark color');
+        }
         // Suppress GD's own warning: a failed draw is reported as ImageException instead.
         $box = @imagettftext($this->image, $fontSize, 0, $x, $y + $fontSize, $textColor, $fontFile, $text);
         if ($box === false) {
