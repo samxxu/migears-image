@@ -21,13 +21,24 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
+          # GD with WebP; ImageTestCase skips itself without it.
+          extensions: gd
           coverage: none
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress --no-interaction
 
+      # The text-watermark tests skip when findFontFile() finds no TrueType font;
+      # this package drops DejaVuSans.ttf at the /usr/share path the test probes.
+      - name: Install fonts
+        run: sudo apt-get update && sudo apt-get install -y fonts-dejavu-core
+
       - name: Static analysis
         run: vendor/bin/phpstan analyse --no-progress
 
+      # GD, WebP and a font make the tests able to run; the flag is what makes a
+      # skip visible. A skipped test still exits 0, so without it a runner image
+      # that stopped shipping one of the three would leave the image half green
+      # while running nothing.
       - name: Tests
-        run: vendor/bin/phpunit
+        run: vendor/bin/phpunit --fail-on-skipped
