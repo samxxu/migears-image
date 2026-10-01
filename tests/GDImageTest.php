@@ -136,6 +136,71 @@ class GDImageTest extends ImageTestCase
         $img->destroy();
     }
 
+    public function testSaveKeepsPngAlphaChannelOnPlainLoadSaveRoundTrip(): void
+    {
+        // Loading keeps the alpha channel in memory, but imagepng() drops it on
+        // output unless imagesavealpha() is on; without the load-time toggle a
+        // plain load-then-save turns every transparent pixel opaque.
+        $img = new GDImage($this->createTransparentPngFile(40, 40));
+
+        $outputPath = $this->tempDir . '/alpha-roundtrip.png';
+        $img->save($outputPath, ImageType::PNG);
+
+        $this->assertSame(127, $this->readAlpha($outputPath, 0, 0));
+        $this->assertSame(127, $this->readAlpha($outputPath, 39, 39));
+
+        $img->destroy();
+    }
+
+    public function testOutputKeepsPngAlphaChannel(): void
+    {
+        $img = new GDImage($this->createTransparentPngFile(20, 20));
+
+        $outputPath = $this->tempDir . '/alpha-output.png';
+        file_put_contents($outputPath, $img->output(ImageType::PNG));
+
+        $this->assertSame(127, $this->readAlpha($outputPath, 10, 10));
+
+        $img->destroy();
+    }
+
+    public function testImageWatermarkKeepsTransparentBackground(): void
+    {
+        $img = new GDImage($this->createTransparentPngFile(100, 100));
+        $wm = new GDImage($this->createSolidImage(20, 20, 0xFF0000));
+
+        $img->imageWatermark($wm, 40, 40, 100);
+
+        $outputPath = $this->tempDir . '/alpha-watermark.png';
+        $img->save($outputPath, ImageType::PNG);
+
+        // Well away from the watermark the canvas must stay transparent.
+        $this->assertSame(127, $this->readAlpha($outputPath, 0, 0));
+        $this->assertSame(127, $this->readAlpha($outputPath, 99, 99));
+
+        $img->destroy();
+        $wm->destroy();
+    }
+
+    public function testTextWatermarkKeepsTransparentBackground(): void
+    {
+        $fontFile = $this->findFontFile();
+        if ($fontFile === null) {
+            $this->markTestSkipped('No usable font file found');
+        }
+
+        $img = new GDImage($this->createTransparentPngFile(200, 100));
+        $img->textWatermark('Hi', $fontFile, 14, 10, 10, 100, 0xFFFFFF);
+
+        $outputPath = $this->tempDir . '/alpha-text.png';
+        $img->save($outputPath, ImageType::PNG);
+
+        // The bottom-right corner is well away from the drawn text.
+        $this->assertSame(127, $this->readAlpha($outputPath, 199, 99));
+
+        $img->destroy();
+    }
+
     public function testConstructFileNotFound(): void
     {
         $this->expectException(ImageException::class);
@@ -466,6 +531,20 @@ class GDImageTest extends ImageTestCase
 
         $img->save($outputPath);
         $this->assertFileExists($outputPath);
+
+        $img->destroy();
+    }
+
+    public function testSaveReportsWriteFailureByReturningFalseWithoutAWarning(): void
+    {
+        $img = $this->createGDImage(20, 20, ImageType::PNG);
+
+        // The destination exists but is a directory, so the write itself fails:
+        // the documented contract is a false return, not a thrown exception and
+        // not a leaked GD warning.
+        $result = $img->save($this->tempDir);
+
+        $this->assertFalse($result);
 
         $img->destroy();
     }
@@ -816,6 +895,15 @@ class GDImageTest extends ImageTestCase
         $badgeCount = substr_count($readme, 'badge/version-');
         $this->assertGreaterThan(0, $badgeCount);
         $this->assertSame($badgeCount, substr_count($readme, "badge/version-{$composer['version']}"));
+    }
+
+    public function testReadmeApiOverviewListsInfoOncePerLanguage(): void
+    {
+        $readme = (string) file_get_contents(__DIR__ . '/../README.md');
+
+        // info() belongs to the "Information" table only; a second row under
+        // "Other" is redundancy. One row per language half, so two in total.
+        $this->assertSame(2, substr_count($readme, '`info(): ImageInfo`'));
     }
 
     // ===== Rotate tests =====

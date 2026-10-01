@@ -74,6 +74,32 @@ abstract class ImageTestCase extends TestCase
         return new GDImage($path);
     }
 
+    /**
+     * Create a PNG whose every pixel is fully transparent, and return the path.
+     */
+    protected function createTransparentPngFile(int $width = 40, int $height = 40): string
+    {
+        $img = imagecreatetruecolor($width, $height);
+        imagealphablending($img, false);
+        imagesavealpha($img, true);
+        $transparent = imagecolorallocatealpha($img, 0, 0, 0, 127);
+        imagefill($img, 0, 0, $transparent);
+
+        $path = $this->tempDir . '/transparent-' . $width . 'x' . $height . '.png';
+        imagepng($img, $path);
+
+        return $path;
+    }
+
+    /**
+     * Read the 7-bit alpha channel of a pixel of a PNG on disk (127 = transparent).
+     */
+    protected function readAlpha(string $path, int $x, int $y): int
+    {
+        $img = imagecreatefrompng($path);
+        return (imagecolorat($img, $x, $y) >> 24) & 0x7F;
+    }
+
     protected function assertImageSize(string $path, int $expectedWidth, int $expectedHeight): void
     {
         $info = getimagesize($path);

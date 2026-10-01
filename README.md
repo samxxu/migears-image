@@ -16,6 +16,21 @@ A minimalist image processing toolkit based on PHP 8.1+ and the GD extension.
 - **Lightweight** — Core class within a few hundred lines, readable in one sitting
 - **High test coverage** — Uses GD to generate test images, covering all core functionality
 
+## Boundaries
+
+**In scope**
+
+- `GDImage` (implements `ImageInterface`), a GD-backed layer doing resize (`resize`, `resizeToWidth`, `resizeToHeight`, `resizeToMax`), crop (`crop`, `cropCenter`, `thumbnail`), rotate/flip (`rotate`, `flipHorizontal`, `flipVertical`, `flipBoth`) and watermarks (`imageWatermark`, `textWatermark`, opacity 0-100).
+- Reading from a file path or an existing `\GdImage`, detecting the type from the file content, and writing out with `save()` / `output()` in JPEG, PNG, GIF and WEBP (quality 0-100).
+- The `ImageType` enum and the readonly `ImageInfo` value object; failures throw `MiGears\Image\Exception\ImageException`, except a write failure in `save()`, which is reported by its `false` return value.
+
+**Not in scope (by design)**
+
+- Sending the HTTP response — no output, no headers, no `Response` object; `output()` returns a binary string and `save()` writes a file, so emitting `Content-Type` and the body belongs to the caller or the framework.
+- Generating captcha images — that is `migears/captcha` (random code, math mode, difficulty levels, noise and interference lines).
+- Storing, caching or serving images, and handling uploads — no session/DB/filesystem storage and no `$_FILES` processing; caching belongs to `migears/cache`.
+- Any dependency beyond PHP itself — `ext-gd` is only suggested, and no PSR interfaces are used.
+
 ## Requirements
 
 - PHP 8.1+
@@ -183,14 +198,13 @@ new GDImage(\GdImage $resource, ?ImageType $type = null);
 
 | Method | Description |
 |--------|-------------|
-| `save(string $path, ?ImageType $type = null, int $quality = 90): bool` | Save to file (`$quality` 0-100) |
+| `save(string $path, ?ImageType $type = null, int $quality = 90): bool` | Save to file (`$quality` 0-100); returns `false` if the write fails |
 | `output(?ImageType $type = null, int $quality = 90): string` | Output as binary string (`$quality` 0-100) |
 
 ### Other
 
 | Method | Description |
 |--------|-------------|
-| `info(): ImageInfo` | Get image info (width, height, type) |
 | `resource(): \GdImage` | Get raw GD image object |
 | `destroy(): void` | Releases the image (no-op on PHP 8.0+, where it is freed when released) |
 
@@ -226,7 +240,7 @@ ImageType::fromMime('image/jpeg');
 
 ## Exceptions
 
-All failures throw `MiGears\Image\Exception\ImageException`, including out-of-range parameters (`$quality` and `$opacity` must be between 0 and 100) and a declared type that contradicts the detected one.
+All failures throw `MiGears\Image\Exception\ImageException`, including out-of-range parameters (`$quality` and `$opacity` must be between 0 and 100) and a declared type that contradicts the detected one. The one exception is `save()`: when the file cannot be written it returns `false` instead of throwing, so callers must check the return value.
 
 ## Testing
 
@@ -254,6 +268,21 @@ MIT
 - **类型安全** — 全量类型声明、readonly 值对象、枚举
 - **轻量级** — 核心类控制在几百行以内，可一口气读完
 - **高测试覆盖** — 使用 GD 生成测试图片，覆盖所有核心功能
+
+## 边界
+
+**范围内**
+
+- `GDImage`（实现 `ImageInterface`）这一 GD 支撑层：缩放（`resize`、`resizeToWidth`、`resizeToHeight`、`resizeToMax`）、裁剪（`crop`、`cropCenter`、`thumbnail`）、旋转/翻转（`rotate`、`flipHorizontal`、`flipVertical`、`flipBoth`）与水印（`imageWatermark`、`textWatermark`，透明度 0-100）。
+- 从文件路径或已有 `\GdImage` 读取，按文件内容检测类型，并用 `save()` / `output()` 写出 JPEG、PNG、GIF、WEBP（质量 0-100）。
+- `ImageType` 枚举与 readonly 值对象 `ImageInfo`；失败均抛出 `MiGears\Image\Exception\ImageException`，唯 `save()` 的写入失败以其 `false` 返回值报告。
+
+**范围外（刻意不做）**
+
+- 发送 HTTP 响应 —— 不做输出、不发送响应头、不提供 `Response` 对象；`output()` 返回二进制字符串、`save()` 只写文件，因此设置 `Content-Type` 与响应体属于调用方或框架。
+- 生成验证码图片 —— 那属于 `migears/captcha`（随机码、算术模式、难度等级、噪点与干扰线）。
+- 存储、缓存或对外提供图片，以及处理上传 —— 不做 session/数据库/文件系统存储，也不处理 `$_FILES`；缓存属于 `migears/cache`。
+- PHP 之外的任何依赖 —— `ext-gd` 仅为建议依赖，也不引入 PSR 接口。
 
 ## 要求
 
@@ -421,14 +450,13 @@ new GDImage(\GdImage $resource, ?ImageType $type = null);
 
 | 方法 | 说明 |
 |------|------|
-| `save(string $path, ?ImageType $type = null, int $quality = 90): bool` | 保存到文件（`$quality` 0-100） |
+| `save(string $path, ?ImageType $type = null, int $quality = 90): bool` | 保存到文件（`$quality` 0-100）；写入失败时返回 `false` |
 | `output(?ImageType $type = null, int $quality = 90): string` | 输出二进制字符串（`$quality` 0-100） |
 
 ### 其他
 
 | 方法 | 说明 |
 |------|------|
-| `info(): ImageInfo` | 获取图片信息（宽、高、类型） |
 | `resource(): \GdImage` | 获取原始 GD 图像对象 |
 | `destroy(): void` | 释放图像（PHP 8.0+ 下为空操作，对象释放时自动回收） |
 
@@ -464,7 +492,7 @@ ImageType::fromMime('image/jpeg');
 
 ## 异常
 
-所有失败均抛出 `MiGears\Image\Exception\ImageException`，包括参数越界（`$quality` 与 `$opacity` 必须在 0-100 之间）以及声明类型与检测类型不一致。
+所有失败均抛出 `MiGears\Image\Exception\ImageException`，包括参数越界（`$quality` 与 `$opacity` 必须在 0-100 之间）以及声明类型与检测类型不一致。唯一例外是 `save()`：文件无法写入时它返回 `false` 而不抛异常，调用方必须检查返回值。
 
 ## 测试
 

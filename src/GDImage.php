@@ -257,7 +257,9 @@ class GDImage implements ImageInterface
         if (! is_dir($dir) && ! mkdir($dir, 0755, true)) {
             throw new ImageException("Cannot create directory: {$dir}");
         }
-        return $this->outputTo($path, $saveType, $quality);
+        // A failed write is reported to the caller by the false return value, not by
+        // a leaked GD warning; same idiom as textWatermark().
+        return @$this->outputTo($path, $saveType, $quality);
     }
 
     public function output(?ImageType $type = null, int $quality = 90): string
@@ -304,6 +306,12 @@ class GDImage implements ImageInterface
         };
         if ($image === false) {
             throw new ImageException("Failed to load image: {$path}");
+        }
+        // A PNG keeps its alpha channel in memory but imagepng() writes it out
+        // only when imagesavealpha() is on; without it a plain load-then-save
+        // turns every transparent pixel opaque. Same toggle as createTrueColor().
+        if ($type === ImageType::PNG || $type === ImageType::WEBP) {
+            imagesavealpha($image, true);
         }
         return $image;
     }
