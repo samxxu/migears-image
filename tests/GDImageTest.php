@@ -549,6 +549,20 @@ class GDImageTest extends ImageTestCase
         $img->destroy();
     }
 
+    public function testSaveReportsUncreatableDirectoryByThrowingWithoutAWarning(): void
+    {
+        $img = $this->createGDImage(20, 20, ImageType::PNG);
+
+        // A regular file where the parent directory should be makes mkdir() fail:
+        // the documented contract is an ImageException, and the raw mkdir warning
+        // must not leak, because the strict flags turn that warning into a failure.
+        $blocker = $this->tempDir . '/blocker';
+        file_put_contents($blocker, 'not a directory');
+
+        $this->expectException(ImageException::class);
+        $img->save($blocker . '/output.png');
+    }
+
     // ===== Chained call tests =====
 
     public function testChainCalls(): void

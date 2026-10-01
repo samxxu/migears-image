@@ -254,7 +254,9 @@ class GDImage implements ImageInterface
         if ($quality < 0 || $quality > 100) throw new ImageException('Quality must be between 0 and 100');
         $saveType = $type ?? $this->detectTypeFromPath($path) ?? $this->type;
         $dir = dirname($path);
-        if (! is_dir($dir) && ! mkdir($dir, 0755, true)) {
+        // A failed mkdir is reported to the caller by the exception below, not by
+        // a leaked PHP warning; same idiom as the write at the end of this method.
+        if (! is_dir($dir) && ! @mkdir($dir, 0755, true)) {
             throw new ImageException("Cannot create directory: {$dir}");
         }
         // A failed write is reported to the caller by the false return value, not by
