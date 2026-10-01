@@ -17,17 +17,20 @@ Legend — **P0** functional or security · **P1** documentation that fails when
 
 | | |
 |---|---|
-| Unsettled | P0 0 · P1 0 · P2 0 · P3 1 · other 1 |
-| Settled | 0 of 2 |
-| Waiting on the owner | `P3-1` |
-| Waiting on the reviewer | `G3` |
+| Unsettled | P0 0 · P1 1 · P2 0 · P3 1 · other 0 |
+| Settled | 3 of 5 |
+| Waiting on the owner | `P1-1`, `P3-2` |
 | Waiting on the coordinator | _nothing_ |
+| Waiting on the reviewer | _nothing_ |
 | Deferred, owing nobody | _nothing_ |
 
 | id | level | status | title |
 |---|---|---|---|
-| [`P3-1`](issues/P3-1.md) | P3 | **open** | `imagecolorallocatealpha()` returns `int|false` and is unchecked; a … |
-| [`G3`](issues/G3.md) | - | **fixed** | Skip guard: `tests/ImageTestCase.php` skips when GD is absent, and … |
+| [`P1-1`](issues/P1-1.md) | P1 | **accepted** | `save()` returns `false` on a write failure and leaks a raw PHP … |
+| [`P2-1`](issues/P2-1.md) | P2 | **verified** | A transparent PNG loses its alpha channel on a plain load-then-save, … |
+| [`P3-1`](issues/P3-1.md) | P3 | **verified** | `imagecolorallocatealpha()` returns `int|false` and is unchecked; a … |
+| [`P3-2`](issues/P3-2.md) | P3 | **open** | info() appears twice in the README API overview table — once under … |
+| [`G3`](issues/G3.md) | - | **verified** | Skip guard: `tests/ImageTestCase.php` skips when GD is absent, and … |
 
 ## Unclosed
 
@@ -36,14 +39,14 @@ highest severity first. `waiting on` is the party who acts next, read from that 
 
 | | |
 |---|---|
-| Unclosed | **2** of 2 |
-| By status | `open` 1 · `fixed` 1 |
-| Waiting on | owner 1 · reviewer 1 |
+| Unclosed | **2** of 5 |
+| By status | `open` 1 · `accepted` 1 |
+| Waiting on | owner 2 |
 
 | level | item | status | waiting on | title |
 |---|---|---|---|---|
-| **P3** | [`P3-1`](issues/P3-1.md) | `open` | owner | `imagecolorallocatealpha()` returns `int\|false` and is unchecked; a … |
-| **-** | [`G3`](issues/G3.md) | `fixed` | reviewer | Skip guard: `tests/ImageTestCase.php` skips when GD is absent, and … |
+| **P1** | [`P1-1`](issues/P1-1.md) | `accepted` | owner | `save()` returns `false` on a write failure and leaks a raw PHP … |
+| **P3** | [`P3-2`](issues/P3-2.md) | `open` | owner | info() appears twice in the README API overview table — once under … |
 
 ## Verdict
 
@@ -84,17 +87,20 @@ No test for save() returning false on actual write failure (disk full / permissi
 
 | | |
 |---|---|
-| 未了结 | P0 0 · P1 0 · P2 0 · P3 1 · 其他 1 |
-| 已了结 | 0 / 2 |
-| 等负责人 | `P3-1` |
-| 等评审方 | `G3` |
+| 未了结 | P0 0 · P1 1 · P2 0 · P3 1 · 其他 0 |
+| 已了结 | 3 / 5 |
+| 等模块主 | `P1-1`, `P3-2` |
 | 等协调人 | _无_ |
+| 等评审方 | _无_ |
 | 已暂缓，不欠谁 | _无_ |
 
 | id | 级别 | 状态 | 标题 |
 |---|---|---|---|
-| [`P3-1`](issues/P3-1.md) | P3 | **open** | imagecolorallocatealpha() 返回 int|false 且未检查；strict_types 下 false 会在 … |
-| [`G3`](issues/G3.md) | - | **fixed** | 跳过守卫：缺少 GD 时 `tests/ImageTestCase.php` 会跳过，`tests/GDImageTest.php` 还会因 … |
+| [`P1-1`](issues/P1-1.md) | P1 | **accepted** | `save()` 在写入失败时返回 `false` 并漏出原始 PHP 警告，而 `README.md` 承诺所有失败都抛 … |
+| [`P2-1`](issues/P2-1.md) | P2 | **verified** | 透明 PNG 在「载入再保存」时会丢掉 alpha 通道，两种水印下也一样，因为 `imagecreatefrompng()` 不打开 … |
+| [`P3-1`](issues/P3-1.md) | P3 | **verified** | imagecolorallocatealpha() 返回 int|false 且未检查；strict_types 下 false 会在 … |
+| [`P3-2`](issues/P3-2.md) | P3 | **open** | README API 概览表格中 info() 出现两次——一次在「信息」类，一次在「其他」类——文档冗余。 |
+| [`G3`](issues/G3.md) | - | **verified** | 跳过守卫：缺少 GD 时 `tests/ImageTestCase.php` 会跳过，`tests/GDImageTest.php` 还会因 … |
 
 ## 未关闭
 
@@ -103,14 +109,14 @@ No test for save() returning false on actual write failure (disk full / permissi
 
 | | |
 |---|---|
-| 未关闭 | **2** / 2 |
-| 按状态 | `open` 1 · `fixed` 1 |
-| 等在谁 | 负责人 1 · 评审方 1 |
+| 未关闭 | **2** / 5 |
+| 按状态 | `open` 1 · `accepted` 1 |
+| 等在谁 | 模块主 2 |
 
 | 级别 | 条目 | 状态 | 等在谁 | 标题 |
 |---|---|---|---|---|
-| **P3** | [`P3-1`](issues/P3-1.md) | `open` | 负责人 | imagecolorallocatealpha() 返回 int\|false 且未检查；strict_types 下 false 会在 … |
-| **-** | [`G3`](issues/G3.md) | `fixed` | 评审方 | 跳过守卫：缺少 GD 时 `tests/ImageTestCase.php` 会跳过，`tests/GDImageTest.php` 还会因 … |
+| **P1** | [`P1-1`](issues/P1-1.md) | `accepted` | 模块主 | `save()` 在写入失败时返回 `false` 并漏出原始 PHP 警告，而 `README.md` 承诺所有失败都抛 … |
+| **P3** | [`P3-2`](issues/P3-2.md) | `open` | 模块主 | README API 概览表格中 info() 出现两次——一次在「信息」类，一次在「其他」类——文档冗余。 |
 
 ## 结论
 
